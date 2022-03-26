@@ -1,12 +1,22 @@
+import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import { useCallbackPrompt } from "../helpers/custom-hooks/useCallbackPrompt";
 import useInput from "../helpers/custom-hooks/useInput";
 import { regEmail, regPassword } from "../helpers/regex";
 import { authActions } from "../store/authSlice";
 import { usersData } from "../store/usersData";
+import {CardModal} from "./UI/Modal";
+import Loading from "./UI/Loading";
 
 const Auth = () => {
   const dispatch = useDispatch();
+  const navigate =useNavigate()
+  const location = useLocation()
+  const [loading, setLoading] =useState(false)
+  const [showModal, setShowModal]=useState(false)
+  const [showPrompt, confirmNavigation, cancelNavigation]=useCallbackPrompt(showModal)
   const {
     enteredValue: emailValue,
     enterdNameTouch: enterEmailTouch,
@@ -17,7 +27,7 @@ const Auth = () => {
     setEnteredValue: setEnteredEmail,
     setEnteredNameTouch: setEnteredEmailTouch,
     nameInputClasses: emailClass,
-  } = useInput(regEmail);
+  } = useInput(regEmail, setShowModal);
   const {
     enteredValue: passwordValue,
     enterdNameTouch: enterPasswordTouch,
@@ -28,7 +38,7 @@ const Auth = () => {
     setEnteredValue: setEnteredPassword,
     setEnteredNameTouch: setEnteredPasswordTouch,
     nameInputClasses: passwordClass,
-  } = useInput(regPassword);
+  } = useInput(regPassword, setShowModal);
 
   let formIsValid = false;
 
@@ -55,22 +65,44 @@ const Auth = () => {
       id: Math.random().toString(),
     };
     async function postUsers(){
-      const response = await fetch('https://trello-users-72538-default-rtdb.firebaseio.com/trelloUsers.json',{
+      setLoading(true)
+      try {
+         const response = await fetch('https://trello-users-72538-default-rtdb.firebaseio.com/trelloUsers.json',{
         method: 'POST',
         headers: {'Content-type' : 'aplication/json'},
         body: JSON.stringify(usersData)
 
       })
-      const result = await response.json()
-      console.log(result);
+       if(!response.ok){
+         setLoading(false)
+         throw new Error('Can not register .Something went wrong with server :(  !')
+
+       }
+       if(response.ok){
+         setLoading(false)
+          alert('sucsess!')
+          dispatch(authActions.authention(userData))
+          navigate('/homepage',{replace: true, state: {location}})
+
+
+       }
+
+      } catch (error) {
+       console.log(error.message)
+      }
+
     }
     postUsers()
-    dispatch(authActions.authention(userData));
+
+
+         dispatch(authActions.registerTrello(true))
     console.log(userData);
   };
   return (
     <AuthStyled>
-      <section>
+      {showPrompt&& <CardModal onConfirm={confirmNavigation} onCencel={cancelNavigation}/>}
+      {loading? <Loading type={'cylon'} color='green'/>  : <section>
+
         <form onSubmit={submitHadler}>
           <h1>Регистрация в Trello</h1>
           <div>
@@ -121,7 +153,7 @@ const Auth = () => {
 
 
         </AfterLogin>
-      </section>
+      </section>}
     </AuthStyled>
   );
 };
@@ -160,6 +192,7 @@ const AuthStyled = styled.main`
   padding: 2rem;
   text-align: center;
   background-color: #f4f0fa;
+
 
 
   & div {

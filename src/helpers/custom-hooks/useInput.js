@@ -1,6 +1,6 @@
 import React,{useState} from 'react'
 
-const useInput = (RegExp) => {
+const useInput = (RegExp, showmodal) => {
 
     const [enteredValue, setEnteredValue] = useState('');
     const [enteredEmail, setEnteredEmail] = useState('')
@@ -19,6 +19,7 @@ const useInput = (RegExp) => {
     };
     const changeInputHandler = (e) => {
       setEnteredValue(e.target.value);
+      showmodal(true)
       if(e.target.name === 'email'){
         setEnteredEmail(e.target.value)
       }

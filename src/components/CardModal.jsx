@@ -1,13 +1,19 @@
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import styled from 'styled-components'
 import ReactDOM  from 'react-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { cardActions } from '../../../store/cardsSlice'
+import { cardActions } from '../store/cardsSlice'
+
 
 const Modal = (props) => {
 
     const dispatch = useDispatch()
     const cardItemData = useSelector((state)=>state.card.cardModal.cardItem)
+    const desRef =useRef('')
+    const [des, setDes] =useState('')
+    const saveDescription =(e)=>{
+            setDes(desRef.current.value)
+    }
 
 
   return (
@@ -21,19 +27,18 @@ const Modal = (props) => {
           </div>
             </section>
             <div>
-                <h1 onClick={()=>dispatch(cardActions.toggleCard())}  >X</h1>
+                <h1 onClick={()=>dispatch(cardActions.toggleCard())} >X</h1>
             </div>
         </header>
         <main>
             <div className='description'>
                  <p>Описание</p>
                  <div>
-                   <textarea name="" id="" cols="80" rows="5" placeholder='Добавить более подробное описание...'></textarea>
-                 </div>
-
-                 <div>
-                   <button>save</button>
+                   {des ?<div><p>{des}</p></div>: <><textarea name="" id="" cols="80" rows="5" ref={desRef} placeholder='Добавить более подробное описание...'></textarea> <div>
+                   <button onClick={saveDescription}>save</button>
                  <strong>X</strong>
+                 </div></>}
+
                  </div>
 
             </div>

@@ -1,4 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux';
+import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { authActions } from '../store/authSlice';
 const UserProfileStyled = styled.main`
@@ -32,7 +33,14 @@ const UserProfileStyled = styled.main`
 
 const UserProfile = () => {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const location = useLocation()
   const profileData = useSelector((state)=>state.auth.userProfile)
+  const logoutHandler =()=>{
+    dispatch(authActions.registerTrello(false))
+    navigate('/login-page',{replace: true, state: {location}})
+
+  }
   return (
     <UserProfileStyled>
       <header>
@@ -49,6 +57,9 @@ const UserProfile = () => {
         <p>your email: {profileData.email}</p>
        </div>
       <img src='https://cdn.dribbble.com/users/175710/screenshots/2719567/attachments/550443/taco-3-body.png?compress=1&resize=400x300&vertical=top'/>
+     <div>
+       <button onClick={logoutHandler}>log out</button>
+       </div>
 
     </UserProfileStyled>
   );

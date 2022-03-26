@@ -2,26 +2,53 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import styled from "styled-components";
 import { authActions } from "../store/authSlice";
-import { usersData } from "../store/usersData";
+import background from "../assets/img/img.jpg";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import Loading from "./UI/Loading";
+import { useCallbackPrompt } from "../helpers/custom-hooks/useCallbackPrompt";
+import {CardModal}from './UI/Modal'
 
 const Auth = () => {
   const dispatch = useDispatch();
+  const [loading, setLoading] = useState(false);
+
+  const [showModal, setShowModal] = useState(false);
+  const [showPrompt, confirmNavigation, cancelNavigation] =
+    useCallbackPrompt(showModal);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const fromPage = location.state?.from?.pathname || "/";
+
+  // console.log(location);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginIsValid, setLoginIsValid] = useState(true);
+  const [loginIsValid, setLoginIsValid] = useState(false);
 
   const emailChangeHadler = (e) => {
     setEmail(e.target.value);
+    if(email.trim().length > 0){
+      setShowModal(true)
+    }
   };
   const passwordChangeHadler = (e) => {
     setPassword(e.target.value);
+    if(password.trim().length > 0){
+      setShowModal(true)
+    }
   };
   const registerTrelloHandler = (e) => {
     dispatch(authActions.registerTrello(true));
   };
 
+
   const submitHadler = (e) => {
     e.preventDefault();
+
+
+    if (email.trim().length === "0" || password.trim().length === "0") {
+      setLoginIsValid(false);
+      return;
+    }
 
     const userData = {
       email: email,
@@ -29,11 +56,12 @@ const Auth = () => {
     };
 
     async function checkUsers() {
+      setLoading(true);
       const response = await fetch(
         "https://trello-users-72538-default-rtdb.firebaseio.com/trelloUsers.json"
       );
       const result = await response.json();
-      console.log(result);
+      // console.log(result);
 
       let defarmationUsers = [];
       for (const key in result) {
@@ -41,67 +69,93 @@ const Auth = () => {
       }
 
       const checkUser = defarmationUsers.find(
-        (el) => el.email === userData.email || el.password === userData.password
+        (el) => el.email === userData.email && el.password === userData.password
       );
+      console.log(checkUser);
+      setLoginIsValid(checkUser === "underfined" ? false : true);
 
-      setLoginIsValid(checkUser);
-      dispatch(authActions.authention(checkUser));
+      if (checkUser) {
+        dispatch(authActions.authention(checkUser));
+        dispatch(authActions.registerTrello(true));
+        setLoading(false);
+        navigate("/", { replace: true, state: "/login-page" });
+
+        return;
+      }
+      setLoading(false);
     }
     checkUsers();
   };
 
   return (
-    <AuthStyled>
-      <section>
-        <form onSubmit={submitHadler}>
-          <h1>Вход в Trello</h1>
-          <div>
-            <input
-              type="text"
-              id="email"
-              onChange={emailChangeHadler}
-              placeholder="Укажите адрес электронной почты"
-            />
-            {loginIsValid ? "" : <p>*email adress is invalid!</p>}
-          </div>
-          <div>
-            <input
-              type="password"
-              onChange={passwordChangeHadler}
-              id="password"
-              placeholder="Введите пароль"
-            />
-            {loginIsValid ? "" : <p>*password is invalid!</p>}
-          </div>
-          <button type="type">Войти</button>
-        </form>
-        <p className="or">
-          <span>ИЛИ</span>
-        </p>
-        <AfterLogin>
-          <div className="link-cards">
-            <img src="https://github.githubassets.com/images/modules/logos_page/Octocat.png" />
-            <strong>Войти через Github</strong>
-          </div>
-          <div className="">
-            <img src="https://w7.pngwing.com/pngs/869/485/png-transparent-google-logo-computer-icons-google-text-logo-google-logo-thumbnail.png" />
-            <strong>Войти через Google</strong>
-          </div>
-          <div className="apple">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png" />
-            <strong>Войти через Apple</strong>
-          </div>
-          <section className="faq">
-            <span>Не удается войти?</span>
-            <span onClick={registerTrelloHandler}>Зарегистрироваться</span>
+    <Wrapper img={background}>
+          {showPrompt && <CardModal onConfirm={confirmNavigation} onCencel={cancelNavigation}/>}
+      {loading ? (
+        <Loading color={"grey"} type={"bars"} />
+      ) : (
+        <AuthStyled>
+          <section>
+            <form onSubmit={submitHadler}>
+              <h1>Вход в Trello</h1>
+              <div>
+                <input
+                  type="text"
+                  id="email"
+                  onChange={emailChangeHadler}
+                  placeholder="Укажите адрес электронной почты"
+                />
+                {!loginIsValid ? "" : <p>*email adress is invalid!</p>}
+              </div>
+              <div>
+                <input
+                  type="password"
+                  onChange={passwordChangeHadler}
+                  id="password"
+                  placeholder="Введите пароль"
+                />
+                {!loginIsValid ? "" : <p>*password is invalid!</p>}
+              </div>
+              <button type="submit">Войти</button>
+            </form>
+            <p className="or">
+              <span>ИЛИ</span>
+            </p>
+            <AfterLogin>
+              <div className="link-cards">
+                <img src="https://github.githubassets.com/images/modules/logos_page/Octocat.png" />
+                <strong>Войти через Github</strong>
+              </div>
+              <div className="">
+                <img src="https://w7.pngwing.com/pngs/869/485/png-transparent-google-logo-computer-icons-google-text-logo-google-logo-thumbnail.png" />
+                <strong>Войти через Google</strong>
+              </div>
+              <div className="apple">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1667px-Apple_logo_black.svg.png" />
+                <strong>Войти через Apple</strong>
+              </div>
+              <section className="faq">
+                <span>Не удается войти?</span>
+                <Link to="/signup" onClick={registerTrelloHandler}>
+                  Зарегистрироваться
+                </Link>
+              </section>
+            </AfterLogin>
+
           </section>
-        </AfterLogin>
-      </section>
-    </AuthStyled>
+        </AuthStyled>
+      )}
+    </Wrapper>
   );
 };
 
 export default Auth;
+
+const Wrapper = styled.div`
+  background: url(${(props) => props.img});
+  background-size: cover;
+  height: 100vh;
+  display: flex;
+`;
 
 const AfterLogin = styled.div`
   display: flex;
@@ -143,7 +197,7 @@ const AuthStyled = styled.main`
   text-align: center;
   background-color: #f4f0fa;
   min-height: 32rem;
- 
+  max-height: 40rem;
 
   & div {
     margin-bottom: 0.5rem;
@@ -183,11 +237,15 @@ const AuthStyled = styled.main`
     border: none;
     width: 20rem;
     font-weight: bold;
+    color: white;
+  }
+  & button.active {
+    background: grey;
   }
   & h1 {
     color: #026aa7;
   }
-  & button:disabled {
+  /* & button:disabled {
     color: rgb(150, 150, 150);
     background-color: #ccc;
   }
@@ -199,7 +257,7 @@ const AuthStyled = styled.main`
     color: #3f3f3f;
     border-color: #ccc;
     cursor: not-allowed;
-  }
+  } */
   & p {
     box-sizing: border-box;
     color: #dc0864b8;

@@ -1,33 +1,50 @@
-import { useSelector } from "react-redux";
 import styled from "styled-components";
-import Auth from "./components/Auth";
-import UserProfile from "./components/UserProfile";
-import background from "./assets/img/img.jpg";
-import Headers from "./header/Headers";
-import AddTemplate from "./components/Layout/addTemplate/AddTemplate";
+import React from 'react'
+import { Route, Routes } from "react-router-dom";
 import SignUp from "./components/SignUp";
+import WorkSpace from "./components/pages/WorkSpace";
+import Archive from "./components/pages/Archive";
+import Favorite from "./components/pages/Favorite";
+import Recent from "./components/pages/Recent";
+import NotFoundPage from "./components/pages/NotFoundPage";
+import SinglePaage from "./components/pages/SinglePaage";
+import RequireAuth from "./helpers/hoc/RequireAuth";
+import { Suspense } from "react";
+import Loading from "./components/UI/Loading";
+const Layout = React.lazy(() => import("./components/Layout/Layout"));
+const Auth = React.lazy(() => import("./components/Auth"));
+const HomePage = React.lazy(() => import("./components/pages/HomePage"));
 
 function App() {
-  const authIsValid = useSelector((state) => state.auth.isValid);
-  const showProfile = useSelector((state)=>state.auth.showProfile);
-  const isRegister = useSelector((state)=>state.auth.isRegister);
-
-
-  console.log(authIsValid);
   return (
-    <Wrapper authIsValid ={authIsValid} img={background}>
-      {authIsValid ? (
-        <>
-          <Headers />
-          <AddTemplate />
-          {showProfile&& <UserProfile/> }
+    <Suspense fallback={<div style={{
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform:'translate(50%, 50%)'
+    }}><Loading/></div>}>
+      <Routes>
+        <Route path="/login-page" element={<Auth />} />
+        <Route path="/signup" element={<SignUp />} />
 
-
-        </>
-      ) : (
-        !isRegister ? <Auth/>: <SignUp/>
-      )}
-    </Wrapper>
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
+              <Layout />
+            </RequireAuth>
+          }
+        >
+          <Route index path="/" element={<HomePage />} />
+          <Route path="workspace" element={<WorkSpace />} />
+          <Route path="recent" element={<Recent />} />
+          <Route path="favorite" element={<Favorite />} />
+          <Route path="favorite/:id" element={<SinglePaage />} />
+          <Route path="archive" element={<Archive />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
 
